@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jurassic Web Museum</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- The 3D Canvas -->
+    <canvas id="webgl"></canvas>
+
+    <!-- UI Overlay -->
+    <div id="ui-container">
+        
+        <!-- Main Navigation (Motion Graphic Style) -->
+        <div id="nav-panel">
+            <h2>PARK DATABASE</h2>
+            <div class="line-deco"></div>
+            <ul id="dino-list">
+                <!-- Javascript will populate this -->
+            </ul>
+            <button id="toggle-roam">FREE ROAM (WASD + CLICK)</button>
+        </div>
+
+        <!-- Info Card (Appears on Hover) -->
+        <div id="info-card" class="hidden">
+            <div class="card-header">
+                <h1 id="dino-name">T-REX</h1>
+                <div class="scan-line"></div>
+            </div>
+            <div class="card-body">
+                <p><strong>Height:</strong> <span id="dino-height">0m</span></p>
+                <p><strong>Diet:</strong> <span id="dino-diet">Carnivore</span></p>
+                <p id="dino-desc">Description text here.</p>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div id="instructions">
+            HOVER to Scan | CLICK to Travel | WASD to Move
+        </div>
+    </div>
+
+    <script type="module" src="/main.js"></script>
+</body>
+</html>
