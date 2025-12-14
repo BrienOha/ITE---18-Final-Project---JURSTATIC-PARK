@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jurassic Web Museum</title>
+    <link rel="icon" type="image/svg+xml" href="jurassic-park-icon.svg">
+    <title>Justatic Park</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- The 3D Canvas -->
     <canvas id="webgl"></canvas>
 
     <!-- UI Overlay -->
@@ -38,6 +38,18 @@
 
         <!-- Instructions -->
         <div id="instructions">
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+        <div id="loading-bar-container">
+            <div id="loading-bar"></div>
+        </div>
+        <div id="loading-text">Loading assets...</div>
+    </div>
+
+    <!-- The 3D Canvas -->
+    <canvas id="webgl"></canvas>
+
+    <!-- UI Overlay -->
             HOVER to Scan | CLICK to Travel | WASD to Move
         </div>
     </div>

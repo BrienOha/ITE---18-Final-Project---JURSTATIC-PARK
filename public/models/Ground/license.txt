@@ -1,0 +1,11 @@
+Model Information:
+* title:	Ground (House In The Woods Project)
+* source:	https://sketchfab.com/3d-models/ground-house-in-the-woods-project-15f605fb9f324276815df833b8e6f573
+* author:	Helindu (https://sketchfab.com/Helindu)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Ground (House In The Woods Project)" (https://sketchfab.com/3d-models/ground-house-in-the-woods-project-15f605fb9f324276815df833b8e6f573) by Helindu (https://sketchfab.com/Helindu) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
