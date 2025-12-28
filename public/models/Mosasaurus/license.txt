@@ -1,0 +1,11 @@
+Model Information:
+* title:	Jurassic World Mosasaurus
+* source:	https://sketchfab.com/3d-models/jurassic-world-mosasaurus-c5bc4535b14e40ab8d989fa544f91c5c
+* author:	AllThingsSaurus (https://sketchfab.com/AllThingsSaurus)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Jurassic World Mosasaurus" (https://sketchfab.com/3d-models/jurassic-world-mosasaurus-c5bc4535b14e40ab8d989fa544f91c5c) by AllThingsSaurus (https://sketchfab.com/AllThingsSaurus) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

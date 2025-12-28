@@ -1,0 +1,11 @@
+Model Information:
+* title:	JWTG Base Carnotaurus
+* source:	https://sketchfab.com/3d-models/jwtg-base-carnotaurus-6bdf5dd958b0473f8d8233866ceb876b
+* author:	Jurassic Radassic (https://sketchfab.com/Radassic)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "JWTG Base Carnotaurus" (https://sketchfab.com/3d-models/jwtg-base-carnotaurus-6bdf5dd958b0473f8d8233866ceb876b) by Jurassic Radassic (https://sketchfab.com/Radassic) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

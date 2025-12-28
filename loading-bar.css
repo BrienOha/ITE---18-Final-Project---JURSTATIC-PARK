@@ -1,31 +1,66 @@
+/* Matches the fonts and colors from your style.css */
 #loading-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: #112233;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #000; /* Solid black to hide the scene while loading */
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
+
 #loading-bar-container {
-  width: 60vw;
-  max-width: 400px;
-  height: 24px;
-  background: #222;
-  border-radius: 12px;
-  overflow: hidden;
-  margin-top: 16px;
+    width: 50vw; /* Responsive width */
+    max-width: 500px;
+    height: 10px; /* Sleek, thin bar */
+    
+    /* Matches #info-card background and border */
+    background: rgba(10, 20, 30, 0.85);
+    border: 1px solid #00f0ff;
+    
+    /* Subtle glow matching the cyan theme */
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+    
+    /* Keep the bar contained */
+    overflow: hidden; 
+    padding: 2px;
 }
+
 #loading-bar {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, #00c3ff, #ffff1c);
-  transition: width 0.3s;
+    height: 100%;
+    width: 0%;
+    
+    /* Cyan fill to match the headers */
+    background: #00f0ff;
+    
+    /* Glow effect on the progress itself */
+    box-shadow: 0 0 10px #00f0ff;
+    
+    transition: width 0.2s ease-out;
 }
+
 #loading-text {
-  color: #fff;
-  font-size: 1.2em;
-  margin-top: 12px;
-  letter-spacing: 1px;
+    /* Matches your main font */
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    
+    /* Yellow accent (matches buttons & strong tags) */
+    color: #ffcc00;
+    
+    margin-top: 20px;
+    font-size: 1.2rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    
+    /* Slight text glow */
+    text-shadow: 0 0 5px rgba(255, 204, 0, 0.5);
+    
+    /* Optional: Blinking effect for "loading..." feel */
+    animation: blink 1.5s infinite alternate;
+}
+
+@keyframes blink {
+    0% { opacity: 0.6; }
+    100% { opacity: 1; }
 }

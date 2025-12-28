@@ -172,7 +172,7 @@ export class World {
             
             // Spawn trees AFTER ground is placed. 
             // 40 trees, spread over the calculated world size
-            this.spawnTrees(500, worldWidth, worldDepth);
+            // this.spawnTrees(500, worldWidth, worldDepth); // <--- COMMENTED OUT
 
         }, (error) => {
             console.warn('Failed to load ground GLTF, falling back.', error);
@@ -184,7 +184,7 @@ export class World {
             this.scene.add(floor);
             this.groundMeshes.push(floor);
             
-            this.spawnTrees(40, 200, 200);
+            // this.spawnTrees(40, 200, 200); // <--- COMMENTED OUT
         });
 
         // --- 2. Fences ---
@@ -216,6 +216,7 @@ export class World {
     }
 
     // --- NEW: Tree Spawner with Spacing Logic ---
+    /*
     spawnTrees(count, rangeX, rangeZ) {
         loadGLTFModel('models/Trees/tree.gltf', (treeModel) => { // Make sure path matches your setup
             
@@ -297,4 +298,6 @@ export class World {
             }
             console.log(`Placed ${treesPlaced} trees after ${attempts} attempts.`);
         });
-    }}
+    }
+    */
+}

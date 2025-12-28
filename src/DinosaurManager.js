@@ -38,6 +38,8 @@ export class DinosaurManager {
                     loadGLTFModel(dino.model, resolve, reject);
                 });
 
+                
+
                 // 2. Load Textures Dynamically (if textureConfig exists in data)
                 if (dino.textureConfig) {
                     const texturePromises = [];
@@ -64,17 +66,16 @@ export class DinosaurManager {
 
     getDinoData() {
         return [
-            { name: "T-Rex", height: 5, length: 12, color: 0x5c4033, desc: "The King of Dinosaurs. Extremely powerful bite force.", pos: {x: 0, y: 0, z: -30}, model: "/models/T-Rex/trex.gltf", scale: 6, textureConfig: { map: "Body_diffuse.jpeg", normalMap: "Body_normal.png", aoMap: "Body_occlusion.png", specularGlossinessMap: "Body_specularGlossiness.png", materialMap: "material_diffuse.jpeg",  materialNormalMap: "material_normal.png"
-} },
+            { name: "T-Rex", height: 5, length: 12, color: 0x5c4033, desc: "The King of Dinosaurs. Extremely powerful bite force.", pos: {x: 0, y: 0, z: -30}, scale: 0.02, model: "/models/T-Rex/trex.gltf"},
             { name: "Velociraptor", height: 1.8, length: 3, color: 0x6e7f80, desc: "Highly intelligent pack hunters. Watch the tall grass.", pos: {x: 0, y: 1.5, z: -15}, scale: 0.05, model: "/models/Velociraptor/velociraptor.gltf", textureConfig: {map: "Material_36_baseColor.jpeg"}},
             { name: "Triceratops", height: 3, length: 9, color: 0x5c5c5c, desc: "Herbivore with three horns and a large frill.", pos: {x:-25, y : 5, z : -20}, scale : 2, model : "/models/Triceratops/triceratops.gltf" },
-            { name:"Spinosaurus", height :7 , length :15 , color :0x2f4f4f , desc :"Largest carnivorous dinosaur , semi-aquatic with a sail . ", pos :{ x :30 , y :0 , z :-40 }, scale :0.05,model:"/models/Spinosaurus/spinosaurus.gltf" },
-            { name:"Carnotaurus" , height :3.5 , length :8 , color :0x8b4513 , desc :"Fast predator with bull-like horns above eyes . ", pos:{ x :-30 , y :0 , z :-10 }, scale :0.05, model:"/models/Carnotaurus/carnotaurus.gltf" },
+            { name:"Spinosaurus", height :7 , length :15 , color :0x2f4f4f , desc :"Largest carnivorous dinosaur , semi-aquatic with a sail . ", pos :{ x :30 , y :-5 , z :-40 }, scale :0.12,model:"/models/Spinosaurus/spinosaurus.gltf" },
+            { name:"Carnotaurus" , height :3.5 , length :8 , color :0x8b4513 , desc :"Fast predator with bull-like horns above eyes . ", pos:{ x :-30 , y :6 , z :-10 }, scale :0.8, model:"/models/Carnotaurus/carnotaurus.gltf" },
             { name: "Brachiosaurus", height: 15, length: 26, color: 0x8fbc8f, desc: "Gentle giant. One of the tallest dinosaurs.", pos: {x: 0, z: -60}, scale: 2.5, model: "/models/Brachiosaurus/brachiosaurus.gltf" },
-            { name: "Pterodactyl", height: 1, length: 2, color: 0xd2b48c, desc: "Flying reptile. Not technically a dinosaur, but a pterosaur.", pos: {x: 15, z: -5, y: 10}, model: "/models/Pterodactyl/pterodactyl.gltf" },
-            { name: "Mosasaurus", height: 4, length: 18, color: 0x00ced1, desc: "Apex predator of the deep seas.", pos: {x: -40, z: 20}, scale: 0.05,model: "/models/Mosasaurus/mosasaurus.gltf" },
-            { name: "Giganotosaurus", height: 6.5, length: 13, color: 0x556b2f, desc: "Larger than T-Rex, but lighter build.", pos: {x: 25, z: 20}, scale: 0.05,model: "/models/Giganotosaurus/giganotosaurus.gltf" },
-            { name: "Allosaurus", height: 4, length: 10, color: 0xa0522d, desc: "The lion of the Jurassic period.", pos: {x: -15, z: 15}, scale: 0.05, model: "/models/Allosaurus/allosaurus.gltf" }
+            { name: "Pterodactyl", height: 1, length: 2, color: 0xd2b48c, desc: "Flying reptile. Not technically a dinosaur, but a pterosaur.", pos: {x: 15, z: -5, y: 10}, scale: 0.0005, model: "/models/Pterodactyl/pterodactyl.gltf" },
+            { name: "Mosasaurus", height: 4, length: 18, color: 0x00ced1, desc: "Apex predator of the deep seas.", pos: {x: -40, z: 20}, scale: 1.5, model: "/models/Mosasaurus/mosasaurus.gltf" },
+            { name: "Giganotosaurus", height: 6.5, length: 13, color: 0x556b2f, desc: "Larger than T-Rex, but lighter build.", pos: {x: 25, y:-4.5, z: 0}, scale: 1.5,model: "/models/Giganotosaurus/giganotosaurus.gltf" },
+            { name: "Allosaurus", height: 4, length: 10, color: 0xa0522d, desc: "The lion of the Jurassic period.", pos: {x: -15, y: 3,z: 15}, scale: 1.2, model: "/models/Allosaurus/allosaurus.gltf" }
         ];
     }
 
