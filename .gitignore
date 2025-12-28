@@ -1,0 +1,40 @@
+# --- Dependencies ---
+node_modules/
+/pids
+/lib-cov
+
+# --- Environment Variables (Important for security) ---
+.env
+.env.test
+.env.production
+.env.local
+
+# --- Logs ---
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# --- Production / Build ---
+dist/
+build/
+out/
+
+# --- Testing ---
+coverage/
+.nyc_output/
+
+# --- IDEs & Editors ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*.tgz
+
+# --- OS System Files ---
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
