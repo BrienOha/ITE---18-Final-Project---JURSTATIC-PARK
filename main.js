@@ -51,11 +51,14 @@ function initEnvironment() {
         renderer.setSize(sizes.width, sizes.height);
     });
 
-    // Get Dino Positions (Static) for World Generation (Tree placement)
-    const dinoDataStatic = DinosaurManager.getStaticDinoData();
-    
-    // Initialize World (Trees, Ground, Lighting)
-    world = new World(scene, dinoDataStatic);
+    // NOTE: For the environment generation (trees, etc.), we still use a temporary static set
+    // or we could fetch here too, but for performance, we let the World build 
+    // while the user is on the title screen using default data.
+    // Ideally, World.js would also accept dynamic data, but for now we keep it simple.
+    // Use an empty array or basic placeholder if needed, or keep the static import in World if it exists.
+    // For this implementation, we pass an empty array initially because the actual Dinos 
+    // are loaded later in initGameAssets.
+    world = new World(scene, []); 
 
     // Start Cinematic Loop
     const clock = new THREE.Clock();
@@ -82,8 +85,8 @@ async function initGameAssets() {
         document.getElementById('loading-overlay').classList.remove('hidden');
         setLoadingProgress(0, 'Initializing Biological Assets...');
 
-        // Load Dinosaurs
-        const assets = await DinosaurManager.preloadAllAssets((percent, text) => {
+        // UPDATED: Destructure the result because preloadAllAssets now returns { assets, data }
+        const { assets, data } = await DinosaurManager.preloadAllAssets((percent, text) => {
             setLoadingProgress(percent, text);
         });
 
@@ -94,10 +97,24 @@ async function initGameAssets() {
         assets.forEach((asset, i) => {
             if (asset.gltf) {
                 const gltfScene = asset.gltf;
-                const scale = asset.dino.scale || 1;
+                const data = asset.dino; // The raw data from DB
+
+                // 1. APPLY SCALE
+                const scale = data.scale || 1;
                 gltfScene.scale.set(scale, scale, scale);
-                gltfScene.position.set(asset.dino.pos.x, asset.dino.pos.y || 0, asset.dino.pos.z);
                 
+                // 2. APPLY POSITION (DEBUGGING ADDED)
+                // We check for 'pos', 'position', or default to 0
+                const x = data.pos?.x ?? data.position?.x ?? 0;
+                const y = data.pos?.y ?? data.position?.y ?? 0;
+                const z = data.pos?.z ?? data.position?.z ?? 0;
+                
+                // Console log to verify (Check this in your browser console!)
+                console.log(`Placing ${data.name} at:`, x, y, z);
+                
+                gltfScene.position.set(x, y, z);
+                
+                // 3. APPLY SHADOWS
                 gltfScene.traverse((child) => {
                     if (child.isMesh) {
                         child.castShadow = true;
@@ -110,8 +127,9 @@ async function initGameAssets() {
         });
 
         // Initialize Managers
-        dinoManager = new DinosaurManager(scene, camera, uiManager, loadedMeshes);
-        
+        // UPDATED: Pass the fetched 'data' to the manager so it knows about the dinos
+        dinoManager = new DinosaurManager(scene, camera, uiManager, loadedMeshes, data);
+
         // Populate UI List
         uiManager.populateList(dinoManager.data, (index) => {
             dinoManager.travelTo(index);
@@ -144,7 +162,7 @@ async function initGameAssets() {
     } catch (error) {
         console.error("CRITICAL ERROR IN LOADING:", error);
         setLoadingProgress(100, "SYSTEM FAILURE");
-        setTimeout(hideLoadingBar, 2000); 
+        // Don't hide loading bar immediately so user sees error
     }
 }
 
@@ -159,3 +177,4 @@ window.addEventListener('settingsChanged', (e) => {
 
     world.updateGraphics(quality, shadows);
 });
+

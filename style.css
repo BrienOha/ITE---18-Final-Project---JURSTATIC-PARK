@@ -188,3 +188,43 @@ select { background: #111; border: 1px solid #444; color: var(--primary); paddin
     color: #555;
     text-decoration: line-through;
 }
+
+/* Add this to your CSS */
+#btn-exit:hover {
+    background: #ff3333 !important; 
+    color: #000 !important; 
+    box-shadow: 0 0 15px rgba(255, 50, 50, 0.5);
+}
+
+#dino-list::-webkit-scrollbar {
+    display: none;
+}
+
+#dino-list {
+    scrollbar-width: none;  
+    -ms-overflow-style: none;  
+}
+
+/* --- CROSSHAIR --- */
+#crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    
+    transform: translate(-50%, -50%);
+    
+    color: var(--primary); 
+    font-family: var(--font-mono);
+    font-size: 1.5rem;
+    font-weight: 100;
+    pointer-events: none; 
+    z-index: 1000;
+    
+    text-shadow: 0 0 5px var(--primary);
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

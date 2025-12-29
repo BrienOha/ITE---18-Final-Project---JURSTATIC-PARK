@@ -11,6 +11,8 @@
 <body>
     <canvas id="webgl" class="hidden"></canvas>
 
+    <div id="crosshair" class="hidden">+</div>
+
     <!-- PERSISTENT AUDIO CONTROL (Top Right) -->
     <!-- Added this so the Music Mute feature works -->
     <div id="audio-controls" class="hidden">
@@ -82,6 +84,7 @@
             <button id="btn-close-settings" class="brutal-btn full">APPLY CHANGES</button>
         </div>
     </div>
+    
 
     <!-- HUD / UI -->
     <div id="ui-container" class="hidden">
@@ -91,9 +94,15 @@
                 <div class="status-light"></div>
             </div>
             <ul id="dino-list"></ul>
+            
+            
+            <ul id="dino-list"></ul>
             <div class="panel-controls">
                 <button id="toggle-roam" class="hud-btn">FREE ROAM</button>
-                <button id="btn-open-settings-game" class="hud-btn small">OPT</button>
+                <button id="btn-open-settings-game" class="hud-btn small">OPTIONS</button>
+                <button id="btn-exit" class="hud-btn" style="margin-bottom: 10px; border-color: #ff3333; color: #ff3333;" onclick="window.location.href='index.html';">
+                    BACK TO MENU
+                </button>
             </div>
         </div>
 

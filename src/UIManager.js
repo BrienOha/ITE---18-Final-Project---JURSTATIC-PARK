@@ -69,6 +69,8 @@ export class UIManager {
             });
         }
 
+        
+
         // --- 3. START GAME ---
         const startBtn = document.getElementById('btn-start');
         if (startBtn) {
@@ -148,4 +150,6 @@ export class UIManager {
         this.currentDino = null;
         this.infoCard.classList.remove('active-card');
     }
+
+    
 }

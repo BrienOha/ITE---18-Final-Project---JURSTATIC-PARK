@@ -6,6 +6,8 @@ export class InputController {
         this.camera = camera; // Store reference to camera
         this.controls = new PointerLockControls(camera, domElement);
 
+        this.crosshair = document.getElementById('crosshair');
+
         // Movement Flags
         this.moveForward = false;
         this.moveBackward = false;
@@ -54,6 +56,17 @@ export class InputController {
 
         document.addEventListener('keydown', onKeyDown);
         document.addEventListener('keyup', onKeyUp);
+        
+        this.controls.addEventListener('lock', () => {
+            // Show Crosshair when playing
+            if(this.crosshair) this.crosshair.classList.remove('hidden');
+        });
+
+        this.controls.addEventListener('unlock', () => {
+            // Hide Crosshair when in menu
+            if(this.crosshair) this.crosshair.classList.add('hidden');
+        });
+
 
         const btn = document.getElementById('toggle-roam');
         if (btn) {
