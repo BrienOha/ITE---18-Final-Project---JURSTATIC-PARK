@@ -3,14 +3,25 @@ import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockCont
 
 export class InputController {
     constructor(camera, domElement) {
+        this.camera = camera; // Store reference to camera
         this.controls = new PointerLockControls(camera, domElement);
+
+        // Movement Flags
         this.moveForward = false;
         this.moveBackward = false;
         this.moveLeft = false;
         this.moveRight = false;
-        
+        this.moveUp = false;   // Ctrl
+        this.moveDown = false; // Shift
+
+        // Physics Vectors
         this.velocity = new THREE.Vector3();
         this.direction = new THREE.Vector3();
+
+        // Settings
+        this.speed = 80.0;          
+        this.verticalSpeed = 60.0;  
+        this.damping = 10.0;        
 
         this.initListeners();
     }
@@ -22,6 +33,10 @@ export class InputController {
                 case 'ArrowLeft': case 'KeyA': this.moveLeft = true; break;
                 case 'ArrowDown': case 'KeyS': this.moveBackward = true; break;
                 case 'ArrowRight': case 'KeyD': this.moveRight = true; break;
+                
+                // Vertical Controls
+                case 'KeyC': this.moveUp = true; break;
+                case 'KeyV': this.moveDown = true; break;
             }
         };
 
@@ -31,33 +46,51 @@ export class InputController {
                 case 'ArrowLeft': case 'KeyA': this.moveLeft = false; break;
                 case 'ArrowDown': case 'KeyS': this.moveBackward = false; break;
                 case 'ArrowRight': case 'KeyD': this.moveRight = false; break;
+
+                case 'KeyC': this.moveUp = false; break;
+                case 'KeyV': this.moveDown = false; break;
             }
         };
 
         document.addEventListener('keydown', onKeyDown);
         document.addEventListener('keyup', onKeyUp);
-        
-        // Setup toggle button in UI
+
         const btn = document.getElementById('toggle-roam');
-        btn.addEventListener('click', () => {
-            this.controls.lock();
-        });
+        if (btn) {
+            btn.addEventListener('click', () => {
+                this.controls.lock();
+            });
+        }
     }
 
     update(delta) {
         if (this.controls.isLocked === true) {
-            this.velocity.x -= this.velocity.x * 10.0 * delta;
-            this.velocity.z -= this.velocity.z * 10.0 * delta;
+            
+            // 1. Damping
+            this.velocity.x -= this.velocity.x * this.damping * delta;
+            this.velocity.z -= this.velocity.z * this.damping * delta;
+            this.velocity.y -= this.velocity.y * this.damping * delta;
 
+            // 2. Input Direction
             this.direction.z = Number(this.moveForward) - Number(this.moveBackward);
             this.direction.x = Number(this.moveRight) - Number(this.moveLeft);
-            this.direction.normalize();
+            this.direction.normalize(); 
 
-            if (this.moveForward || this.moveBackward) this.velocity.z -= this.direction.z * 100.0 * delta;
-            if (this.moveLeft || this.moveRight) this.velocity.x -= this.direction.x * 100.0 * delta;
+            // 3. Apply Speed
+            if (this.moveForward || this.moveBackward) this.velocity.z -= this.direction.z * this.speed * delta;
+            if (this.moveLeft || this.moveRight) this.velocity.x -= this.direction.x * this.speed * delta;
+            
+            // Vertical Logic
+            if (this.moveUp) this.velocity.y += this.verticalSpeed * delta;
+            if (this.moveDown) this.velocity.y -= this.verticalSpeed * delta;
 
+            // 4. Move Camera
+            // PointerLockControls handles horizontal movement relative to look direction
             this.controls.moveRight(-this.velocity.x * delta);
             this.controls.moveForward(-this.velocity.z * delta);
+            
+            // Apply Vertical directly to the camera (Fixes the error)
+            this.camera.position.y += this.velocity.y * delta;
         }
     }
 }

@@ -3,55 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/svg+xml" href="jurassic-park-icon.svg">
-    <title>Justatic Park</title>
+    <link rel="icon" href="jurassic-park-icon.svg" type="image/svg+xml" />
+    <title>JURSTATIC PARK</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="loading-bar.css">
 </head>
 <body>
-    <canvas id="webgl"></canvas>
+    <canvas id="webgl" class="hidden"></canvas>
 
-    <!-- UI Overlay -->
-    <div id="ui-container">
-        
-        <!-- Main Navigation (Motion Graphic Style) -->
-        <div id="nav-panel">
-            <h2>PARK DATABASE</h2>
-            <div class="line-deco"></div>
-            <ul id="dino-list">
-                <!-- Javascript will populate this -->
-            </ul>
-            <button id="toggle-roam">FREE ROAM (WASD + CLICK)</button>
-        </div>
-
-        <!-- Info Card (Appears on Hover) -->
-        <div id="info-card" class="hidden">
-            <div class="card-header">
-                <h1 id="dino-name">T-REX</h1>
-                <div class="scan-line"></div>
+    <!-- TITLE SCREEN -->
+    <div id="title-screen">
+        <div class="grid-bg"></div>
+        <div class="title-container">
+            <div class="top-bar">SYSTEM_READY</div>
+            <h1>JURSTATIC<br>PARK</h1>
+            <p>SITE B // ISLA NUBLAR</p>
+            
+            <div class="menu">
+                <button id="btn-start" class="brutal-btn">ENTER SIMULATION</button>
+                <button id="btn-settings-title" class="brutal-btn outline">OPTIONS</button>
             </div>
-            <div class="card-body">
-                <p><strong>Height:</strong> <span id="dino-height">0m</span></p>
-                <p><strong>Diet:</strong> <span id="dino-diet">Carnivore</span></p>
-                <p id="dino-desc">Description text here.</p>
+            
+            <div class="bottom-data">
+                <span>V.2.4</span>
+                <span>SECURE_CONNECTION</span>
             </div>
         </div>
-
-        <!-- Instructions -->
-        <div id="instructions">
-    <!-- Loading Overlay -->
-    <div id="loading-overlay">
-        <div id="loading-bar-container">
-            <div id="loading-bar"></div>
-        </div>
-        <div id="loading-text">Loading assets...</div>
     </div>
 
-    <!-- The 3D Canvas -->
-    <canvas id="webgl"></canvas>
+    <!-- SETTINGS MODAL -->
+    <div id="settings-modal" class="hidden">
+        <div class="modal-backdrop"></div>
+        <div class="brutal-box">
+            <div class="box-header">
+                <h2>SYSTEM_CONFIG</h2>
+                <div class="deco-box"></div>
+            </div>
+            
+            <div class="setting-row">
+                <label>RENDER QUALITY</label>
+                <div class="select-wrapper">
+                    <select id="set-quality">
+                        <option value="low">LOW [PERFORMANCE]</option>
+                        <option value="medium" selected>MEDIUM [BALANCED]</option>
+                        <option value="high">HIGH [CINEMATIC]</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="setting-row">
+                <label>SHADOWS</label>
+                <button id="toggle-shadows" class="toggle-btn active">ENABLED</button>
+            </div>
 
-    <!-- UI Overlay -->
-            HOVER to Scan | CLICK to Travel | WASD to Move
+            <button id="btn-close-settings" class="brutal-btn full">APPLY CHANGES</button>
+        </div>
+    </div>
+
+    <!-- HUD / UI -->
+    <div id="ui-container" class="hidden">
+        <!-- Sidebar -->
+        <div id="nav-panel">
+            <div class="panel-header">
+                <h3>DATABASE</h3>
+                <div class="status-light"></div>
+            </div>
+            <ul id="dino-list"></ul>
+            <div class="panel-controls">
+                <button id="toggle-roam" class="hud-btn">FREE ROAM</button>
+                <button id="btn-open-settings-game" class="hud-btn small">OPT</button>
+            </div>
+        </div>
+
+        <!-- Info Card -->
+        <div id="info-card" class="hidden">
+            <div class="card-content">
+                <h1 id="dino-name">TYRANNOSAURUS</h1>
+                <div class="data-grid">
+                    <div class="data-item">
+                        <span class="label">HEIGHT</span>
+                        <span id="dino-height" class="value">5.0m</span>
+                    </div>
+                    <div class="data-item">
+                        <span class="label">DIET</span>
+                        <span id="dino-diet" class="value">CARNIVORE</span>
+                    </div>
+                </div>
+                <p id="dino-desc">Description data...</p>
+            </div>
+            <div class="card-deco"></div>
+        </div>
+        
+        <div id="instructions">WASD: MOVE</div>
+    </div>
+
+    <!-- LOADING -->
+    <div id="loading-overlay" class="hidden">
+        <div class="loading-content">
+            <div id="loading-text">INITIALIZING...</div>
+            <div id="loading-bar-container"><div id="loading-bar"></div></div>
         </div>
     </div>
 

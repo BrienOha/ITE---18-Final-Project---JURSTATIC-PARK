@@ -1,4 +1,3 @@
-
 import * as THREE from 'three';
 import { World } from './src/World.js';
 import { DinosaurManager } from './src/DinosaurManager.js';
@@ -6,90 +5,127 @@ import { InputController } from './src/InputController.js';
 import { UIManager } from './src/UIManager.js';
 import { setLoadingProgress, hideLoadingBar } from './loading-bar.js';
 
+let renderer, world;
 
-async function startApp() {
-    // Show loading bar and preload assets
-    setLoadingProgress(0, 'Loading assets...');
-    const assets = await DinosaurManager.preloadAllAssets((percent, text) => {
-        setLoadingProgress(percent, text);
-    });
-    setLoadingProgress(100, 'Finalizing...');
+// 1. Initialize UI
+const uiManager = new UIManager();
 
-    // 1. Setup Scene
-    const canvas = document.querySelector('#webgl');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x112233);
+// 2. Listen for Start
+window.addEventListener('startSimulation', () => {
+    init3DWorld();
+});
 
-    // 2. Setup Camera
-    const sizes = { width: window.innerWidth, height: window.innerHeight };
-    const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 200);
-    camera.position.set(0, 2, 10);
+async function init3DWorld() {
+    try {
+        const canvas = document.querySelector('#webgl');
+        
+        // Show loading visuals
+        canvas.classList.remove('hidden');
+        document.getElementById('loading-overlay').classList.remove('hidden');
+        setLoadingProgress(0, 'Connecting to Satellite...');
 
-    // 3. Setup Renderer
-    const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-    renderer.setSize(sizes.width, sizes.height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
+        // Preload Assets
+        const assets = await DinosaurManager.preloadAllAssets((percent, text) => {
+            setLoadingProgress(percent, text);
+        });
 
-    // 4. Resize Handler
-    window.addEventListener('resize', () => {
-        sizes.width = window.innerWidth;
-        sizes.height = window.innerHeight;
-        camera.aspect = sizes.width / sizes.height;
-        camera.updateProjectionMatrix();
+        setLoadingProgress(100, 'System Ready');
+
+        // Setup Scene
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x112233);
+
+        const sizes = { width: window.innerWidth, height: window.innerHeight };
+        const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000);
+        camera.position.set(0, 5, 10);
+        
+        // FIX: Add camera to scene directly
+        scene.add(camera);
+
+        // Setup Renderer
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
         renderer.setSize(sizes.width, sizes.height);
-    });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.0;
 
-    // 5. Initialize Modules
-    const uiManager = new UIManager();
-    const world = new World(scene);
-    // Use preloaded assets for DinosaurManager
-    const dinoManager = new DinosaurManager(scene, camera, uiManager);
-    const input = new InputController(camera, canvas);
+        // Resize Handler
+        window.addEventListener('resize', () => {
+            sizes.width = window.innerWidth;
+            sizes.height = window.innerHeight;
+            camera.aspect = sizes.width / sizes.height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(sizes.width, sizes.height);
+        });
 
-    // Place preloaded models in the scene
-    assets.forEach((asset, i) => {
-        if (asset.gltf) {
-            let gltfScene = asset.gltf;
-            // Apply scale from dino data (default 1)
-            const scale = asset.dino.scale || 1;
-            gltfScene.scale.set(scale, scale, scale);
-            // Apply textures if present
-            if (asset.textures) {
+        // Process Assets
+        const dinoDataList = [];
+        const loadedMeshes = new Array(assets.length).fill(null);
+
+        assets.forEach((asset, i) => {
+            dinoDataList.push(asset.dino);
+            if (asset.gltf) {
+                const gltfScene = asset.gltf;
+                const scale = asset.dino.scale || 1;
+                gltfScene.scale.set(scale, scale, scale);
+                gltfScene.position.set(asset.dino.pos.x, asset.dino.pos.y || 0, asset.dino.pos.z);
+                
                 gltfScene.traverse((child) => {
-                    if (child.isMesh && child.material) {
-                        if (asset.textures.map) child.material.map = asset.textures.map;
-                        if (asset.textures.normalMap) child.material.normalMap = asset.textures.normalMap;
-                        child.material.needsUpdate = true;
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
                     }
                 });
+                scene.add(gltfScene);
+                loadedMeshes[i] = gltfScene;
             }
-            gltfScene.position.set(asset.dino.pos.x, asset.dino.pos.y || 0, asset.dino.pos.z);
-            gltfScene.userData = { info: asset.dino };
-            scene.add(gltfScene);
-            dinoManager.dinoMeshes[i] = gltfScene;
-        }
-    });
+        });
 
-    // Populate UI List
-    uiManager.populateList(dinoManager.data, (index) => {
-        dinoManager.travelTo(index);
-    });
+        // Initialize Managers
+        world = new World(scene, dinoDataList);
+        const dinoManager = new DinosaurManager(scene, camera, uiManager, loadedMeshes);
+        
+        // Setup Inputs - Attached to Body
+        const input = new InputController(camera, document.body);
+        
+        // FIX: Removed the failing scene.add(input.controls.getObject()) line.
+        // We do not need to add controls to scene, we manipulate camera directly.
 
-    // Hide loading bar
-    hideLoadingBar();
+        // Populate UI
+        uiManager.populateList(dinoManager.data, (index) => {
+            dinoManager.travelTo(index);
+        });
 
-    // 6. Animation Loop
-    const clock = new THREE.Clock();
-    const tick = () => {
-        const delta = clock.getDelta();
-        input.update(delta);
-        dinoManager.checkIntersection();
-        renderer.render(scene, camera);
-        window.requestAnimationFrame(tick);
-    };
-    tick();
-    
+        // Start Loop
+        const clock = new THREE.Clock();
+        const tick = () => {
+            const delta = clock.getDelta();
+            input.update(delta);
+            dinoManager.checkIntersection();
+            renderer.render(scene, camera);
+            requestAnimationFrame(tick);
+        };
+        
+        // Hide Loader
+        hideLoadingBar();
+        tick();
+
+    } catch (error) {
+        console.error("CRITICAL ERROR IN INIT:", error);
+        setLoadingProgress(100, "SYSTEM FAILURE (Check Console)");
+    }
 }
 
-startApp();
+// Global Settings Listener
+window.addEventListener('settingsChanged', (e) => {
+    if (!renderer || !world) return;
+    const { quality, shadows } = e.detail;
+    
+    if (quality === 'low') renderer.setPixelRatio(1);
+    else if (quality === 'medium') renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    else renderer.setPixelRatio(window.devicePixelRatio);
+
+    world.updateGraphics(quality, shadows);
+});

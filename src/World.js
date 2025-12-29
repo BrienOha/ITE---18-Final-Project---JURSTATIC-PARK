@@ -1,181 +1,140 @@
 import * as THREE from 'three';
 import GUI from 'lil-gui';
 import { loadGLTFModel } from './GLTFUtils.js';
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 
 export class World {
-    constructor(scene) {
+    constructor(scene, dinoData = []) {
         this.scene = scene;
+        this.dinoData = dinoData; 
         this.gui = new GUI({ title: "Lighting Studio" });
         
         // Store references
         this.sunLight = null;
         this.ambientLight = null;
-        this.hemiLight = null;
-        this.spotLight = null;
-        this.pointLight = null;
-        
-        // Store material references for GUI
-        this.floorMat = null; 
-        
-        this.helpers = {};
-
-        // NEW: Store ground meshes for Raycasting
         this.groundMeshes = [];
+        this.treeMeshes = []; 
 
         this.setupLights();
         this.setupEnvironment();
         this.setupGUI();
     }
 
+    // Settings update handler
+    updateGraphics(quality, shadowsEnabled) {
+        this.sunLight.castShadow = shadowsEnabled;
+        
+        if (shadowsEnabled) {
+            const size = quality === 'low' ? 1024 : (quality === 'medium' ? 2048 : 4096);
+            this.sunLight.shadow.mapSize.width = size;
+            this.sunLight.shadow.mapSize.height = size;
+            this.sunLight.shadow.map?.dispose();
+            this.sunLight.shadow.map = null;
+        }
+
+        this.treeMeshes.forEach(tree => {
+            tree.castShadow = (quality === 'high' && shadowsEnabled);
+            tree.receiveShadow = shadowsEnabled;
+        });
+    }
+
     setupLights() {
-        // --- 1. Ambient Light ---
-        this.ambientLight = new THREE.AmbientLight(0x663344, 0.2);
+        this.ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
         this.scene.add(this.ambientLight);
 
-        // --- 2. Hemisphere Light ---
-        this.hemiLight = new THREE.HemisphereLight(0x1815d1, 0x005500, 0.5); 
-        this.hemiLight.position.set(0, 50, 0);
-        this.scene.add(this.hemiLight);
+        const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.2); 
+        hemi.position.set(0, 50, 0);
+        this.scene.add(hemi);
 
-        // --- 3. Sun (Directional Light) ---
-        this.sunLight = new THREE.DirectionalLight(0xffaa33, 1.5);
-        this.sunLight.position.set(-50, 10, -50);
+        this.sunLight = new THREE.DirectionalLight(0xffffff, 1.5); 
+        this.sunLight.position.set(50, 80, 50); 
         this.sunLight.castShadow = true;
-        this.sunLight.shadow.bias = -0.001;
-        this.sunLight.shadow.mapSize.width = 2048;
+        this.sunLight.shadow.mapSize.width = 2048; 
         this.sunLight.shadow.mapSize.height = 2048;
+        this.sunLight.shadow.bias = -0.0001;
+        this.sunLight.shadow.normalBias = 0.02;
+        
+        const d = 150; 
+        this.sunLight.shadow.camera.left = -d;
+        this.sunLight.shadow.camera.right = d;
+        this.sunLight.shadow.camera.top = d;
+        this.sunLight.shadow.camera.bottom = -d;
+        this.sunLight.shadow.camera.near = 0.1;
+        this.sunLight.shadow.camera.far = 500;
+
         this.scene.add(this.sunLight);
 
-        // --- 4. SpotLight ---
-        this.spotLight = new THREE.SpotLight(0xffffff, 0); 
-        this.spotLight.position.set(20, 40, 20);
-        this.spotLight.angle = Math.PI / 6;
-        this.spotLight.penumbra = 0.5;
-        this.spotLight.castShadow = true;
-        this.scene.add(this.spotLight);
-        this.spotLight.target.position.set(0, 0, 0);
-        this.scene.add(this.spotLight.target);
-
-        // --- 5. PointLight ---
-        this.pointLight = new THREE.PointLight(0xff0000, 0, 50); 
-        this.pointLight.position.set(0, 5, 0);
-        this.scene.add(this.pointLight);
-
-        // --- Fog ---
-        const fogColor = 0xff9966;
-        this.scene.fog = new THREE.FogExp2(fogColor, 0.012);
-        this.scene.background = new THREE.Color(fogColor);
+        const fogColor = 0xcce0ff; 
+        this.scene.fog = new THREE.FogExp2(fogColor, 0.002); 
     }
 
     setupGUI() {
-        // --- Floor Controls ---
         if (this.floorMat) {
             const floorFolder = this.gui.addFolder('Floor / Ground Surface');
-            floorFolder.add(this.floorMat, 'roughness', 0, 1).name('Roughness (Wet/Dry)');
+            floorFolder.add(this.floorMat, 'roughness', 0, 1).name('Roughness');
             floorFolder.add(this.floorMat, 'metalness', 0, 1).name('Metalness');
-            floorFolder.addColor({ c: this.floorMat.color.getHex() }, 'c')
-                .name('Floor Color').onChange(v => this.floorMat.color.set(v));
+            floorFolder.addColor({ c: this.floorMat.color.getHex() }, 'c').onChange(v => this.floorMat.color.set(v));
         }
-
-        // --- Light Controls ---
         const sunFolder = this.gui.addFolder('Sun (Directional)');
-        sunFolder.add(this.sunLight, 'intensity', 0, 5).name('Intensity');
-        sunFolder.add(this.sunLight.position, 'y', 0, 100).name('Height (Time)');
-        sunFolder.add(this.sunLight.position, 'x', -100, 100).name('X Pos');
-        sunFolder.addColor({ c: this.sunLight.color.getHex() }, 'c')
-            .name('Color').onChange(v => this.sunLight.color.set(v));
-
-        const hemiFolder = this.gui.addFolder('Hemisphere');
-        hemiFolder.add(this.hemiLight, 'intensity', 0, 2).name('Intensity');
-        hemiFolder.addColor({ c: this.hemiLight.color.getHex() }, 'c')
-            .name('Sky Color').onChange(v => this.hemiLight.color.set(v));
-        hemiFolder.addColor({ c: this.hemiLight.groundColor.getHex() }, 'c')
-            .name('Ground Color').onChange(v => this.hemiLight.groundColor.set(v));
-
-        const ambFolder = this.gui.addFolder('Ambient');
-        ambFolder.add(this.ambientLight, 'intensity', 0, 2).name('Intensity');
-        
-        const spotFolder = this.gui.addFolder('SpotLight');
-        spotFolder.add(this.spotLight, 'intensity', 0, 20).name('Intensity');
-        spotFolder.add(this.spotLight.position, 'y', 1, 100).name('Height');
-        const updateSpot = () => this.spotLight.target.updateMatrixWorld();
-        spotFolder.add(this.spotLight.target.position, 'x', -50, 50).name('Target X').onChange(updateSpot);
-        spotFolder.add(this.spotLight.target.position, 'z', -50, 50).name('Target Z').onChange(updateSpot);
-
-        const pointFolder = this.gui.addFolder('PointLight');
-        pointFolder.add(this.pointLight, 'intensity', 0, 20).name('Intensity');
-        pointFolder.add(this.pointLight.position, 'y', 0, 50).name('Y Pos');
-        
-        // --- Debug Helpers ---
-        const helperFolder = this.gui.addFolder('Debug Helpers');
-        const helperSettings = { showSun: false, showSpot: false, showPoint: false };
-
-        helperFolder.add(helperSettings, 'showSun').name('Show Sun Helper').onChange(v => {
-            if (v) { this.helpers.sun = new THREE.DirectionalLightHelper(this.sunLight, 5); this.scene.add(this.helpers.sun); } 
-            else { this.scene.remove(this.helpers.sun); }
-        });
-        helperFolder.add(helperSettings, 'showSpot').name('Show Spot Helper').onChange(v => {
-            if (v) { this.helpers.spot = new THREE.SpotLightHelper(this.spotLight); this.scene.add(this.helpers.spot); } 
-            else { this.scene.remove(this.helpers.spot); }
-        });
-        helperFolder.add(helperSettings, 'showPoint').name('Show Point Helper').onChange(v => {
-            if (v) { this.helpers.point = new THREE.PointLightHelper(this.pointLight, 2); this.scene.add(this.helpers.point); } 
-            else { this.scene.remove(this.helpers.point); }
-        });
+        sunFolder.add(this.sunLight, 'intensity', 0, 5);
+        sunFolder.add(this.sunLight.position, 'y', 0, 100);
     }
 
     setupEnvironment() {
-        // --- 1. Ground GLTF Model with Mirrored Tiling ---
-        loadGLTFModel('/models/Ground/ground.gltf', (gltfScene) => {
-            
-            const box = new THREE.Box3().setFromObject(gltfScene);
-            const size = new THREE.Vector3();
-            box.getSize(size);
+        // HDR Sky
+        const rgbeLoader = new RGBELoader();
+        rgbeLoader.load('/textures/sky.hdr', (texture) => {
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+            this.scene.background = texture;
+            this.scene.environment = texture;
+            this.scene.backgroundBlurriness = 0.1; 
+        }, undefined, () => {
+            this.scene.background = new THREE.Color(0xcce0ff);
+        });
 
-            const tileX = 6; 
-            const tileZ = 6; 
-            const overlap = 0.1; 
-            const stepX = size.x - overlap;
-            const stepZ = size.z - overlap;
+        // --- GROUND WITH GAP FIX ---
+        loadGLTFModel('/models/Ground/ground.gltf', (gltfScene) => {
+            const box = new THREE.Box3().setFromObject(gltfScene);
+            const size = new THREE.Vector3(); box.getSize(size);
+
+            const tileX = 6, tileZ = 6; 
+            
+            // FIX: Use slight overlap (0.5% smaller step than size) to mash edges together
+            const stepX = size.x * 0.995; 
+            const stepZ = size.z * 0.995;
 
             for (let ix = -Math.floor(tileX/2); ix <= Math.floor(tileX/2); ix++) {
                 for (let iz = -Math.floor(tileZ/2); iz <= Math.floor(tileZ/2); iz++) {
-                    
                     const clone = gltfScene.clone(true);
                     
                     const scaleX = (Math.abs(ix) % 2 === 1) ? -1 : 1;
                     const scaleZ = (Math.abs(iz) % 2 === 1) ? -1 : 1;
-                    clone.scale.set(scaleX, 1, scaleZ);
+                    
+                    clone.scale.set(scaleX, 0.15, scaleZ); 
 
                     clone.traverse((child) => {
                         if (child.isMesh) {
                             child.material = child.material.clone();
-                            child.geometry = child.geometry.clone();
                             child.material.side = THREE.DoubleSide; 
                             child.castShadow = false;
                             child.receiveShadow = true;
                             if(child.material.normalMap) child.material.normalScale.set(scaleX, scaleZ); 
                         }
                     });
-
+                    
+                    // Adjust Y slightly to prevent z-fighting if perfectly flat, but with 3D ground it's fine
                     clone.position.set(ix * stepX, 0, iz * stepZ);
                     this.scene.add(clone);
-                    
-                    // Add to array for raycasting
                     this.groundMeshes.push(clone);
                 }
             }
-
-            // Calculate total world size to spread trees out
             const worldWidth = tileX * stepX;
             const worldDepth = tileZ * stepZ;
             
-            // Spawn trees AFTER ground is placed. 
-            // 40 trees, spread over the calculated world size
-            // this.spawnTrees(500, worldWidth, worldDepth); // <--- COMMENTED OUT
+            // Reverted to 700 standard trees (Good FPS, visible leaves)
+            this.spawnTrees(700, worldWidth, worldDepth);
 
         }, (error) => {
-            console.warn('Failed to load ground GLTF, falling back.', error);
             const floorGeo = new THREE.PlaneGeometry(500, 500);
             this.floorMat = new THREE.MeshStandardMaterial({ color: 0xFFA500, roughness: 0.2, metalness: 0.1 });
             const floor = new THREE.Mesh(floorGeo, this.floorMat);
@@ -183,76 +142,104 @@ export class World {
             floor.receiveShadow = true;
             this.scene.add(floor);
             this.groundMeshes.push(floor);
-            
-            // this.spawnTrees(40, 200, 200); // <--- COMMENTED OUT
+            this.spawnTrees(200, 200, 200);
         });
 
-        // --- 2. Fences ---
-        const fenceMat = new THREE.MeshStandardMaterial({ color: 0x555555 });
-        for(let i = 0; i < 40; i++) {
-            const post = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 10), fenceMat);
-            const angle = (i / 40) * Math.PI * 2;
-            const radius = 80;
-            post.position.set(Math.cos(angle) * radius, 5, Math.sin(angle) * radius);
-            this.scene.add(post);
-        }
-
-        // --- 3. Gyrosphere ---
-        const sphereGeo = new THREE.SphereGeometry(1.5, 32, 32);
-        const sphereMat = new THREE.MeshPhysicalMaterial({ 
-            color: 0xffffff, transmission: 0.9, opacity: 0.5, transparent: true, roughness: 0 
-        });
-        const gyrosphere = new THREE.Mesh(sphereGeo, sphereMat);
-        gyrosphere.position.set(5, 1.5, 5);
-        this.scene.add(gyrosphere);
-
-        // --- 4. Jeep ---
-        const jeep = new THREE.Mesh(
-            new THREE.BoxGeometry(2, 2, 4),
-            new THREE.MeshStandardMaterial({ color: 0xaa0000 })
-        );
-        jeep.position.set(-10, 1, 10);
-        this.scene.add(jeep);
+        this.spawnFences();
+        this.loadProps();
     }
 
-    // --- NEW: Tree Spawner with Spacing Logic ---
-    /*
-    spawnTrees(count, rangeX, rangeZ) {
-        loadGLTFModel('models/Trees/tree.gltf', (treeModel) => { // Make sure path matches your setup
+    loadProps() {
+        // Only Gyrosphere remains (You removed Jeep)
+        loadGLTFModel('/models/Gyrosphere/gyrosphere.gltf', (model) => {
+            model.position.set(5, 0.5, 5); 
+            model.scale.set(1.5, 1.5, 1.5); 
+            model.traverse(c => { if(c.isMesh) { c.castShadow = true; c.receiveShadow = true; }});
+            this.scene.add(model);
+        });
+    }
+
+    spawnFences() {
+        const radius = 80;
+        const scaleFactor = 4;
+        
+        Promise.all([
+            new Promise((res, rej) => loadGLTFModel('/models/Fences/dirty_fence/dirty_fence.gltf', res, rej)),
+            new Promise((res, rej) => loadGLTFModel('/models/Fences/dirty_fence_broken/dirty_fence_broken.gltf', res, rej))
+        ]).then(([fenceModel, brokenFenceModel]) => {
             
+            fenceModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
+            brokenFenceModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
+            
+            const box = new THREE.Box3().setFromObject(fenceModel);
+            const size = new THREE.Vector3(); box.getSize(size);
+            const fenceWidth = Math.max(size.x, size.z); 
+            const circumference = 2 * Math.PI * radius;
+            const count = fenceWidth > 0 ? Math.ceil(circumference / fenceWidth) : 100;
+
+            for (let i = 0; i < count; i++) {
+                const angle = (i / count) * Math.PI * 2;
+                const isBroken = Math.random() < 0.15;
+                const modelToClone = isBroken ? brokenFenceModel : fenceModel;
+                const fence = modelToClone.clone(true);
+                const x = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+                
+                fence.position.set(x, 0, z);
+                fence.lookAt(0, 0, 0); 
+                fence.rotateY(Math.PI / 2); 
+                fence.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+                fence.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+                this.scene.add(fence);
+            }
+        }).catch(err => console.warn("Fence error", err));
+    }
+
+    spawnTrees(count, rangeX, rangeZ) {
+        loadGLTFModel('models/Trees/tree.gltf', (treeModel) => { 
             const raycaster = new THREE.Raycaster();
             const down = new THREE.Vector3(0, -1, 0);
             const origin = new THREE.Vector3();
-            
             const existingPositions = [];
             const minDistance = 5; 
-
-            let attempts = 0;
-            let treesPlaced = 0;
-
-            // FIX: Attempts limit must be higher than the count!
-            // We allow 10 attempts per tree requested to find a spot.
-            const maxAttempts = count * 10; 
+            
+            let attempts = 0, treesPlaced = 0;
+            const maxAttempts = count * 50; 
+            const fenceRadius = 80;
 
             while (treesPlaced < count && attempts < maxAttempts) {
                 attempts++;
-
-                // 1. Random Candidate Position
                 const rX = (Math.random() - 0.5) * rangeX; 
                 const rZ = (Math.random() - 0.5) * rangeZ;
-                const candidate = new THREE.Vector3(rX, 0, rZ);
+                
+                // Sparse inside fence
+                if (Math.sqrt(rX*rX + rZ*rZ) < fenceRadius) {
+                    if (Math.random() > 0.05) continue;
+                }
 
-                // 2. Check Distance
+                // Dino Collision
+                let hitDino = false;
+                for (const dino of this.dinoData) {
+                    const dx = rX - dino.pos.x;
+                    const dz = rZ - dino.pos.z;
+                    if (Math.sqrt(dx*dx + dz*dz) < (dino.length/2) + 10) { hitDino = true; break; }
+                }
+                if (hitDino) continue; 
+
+                // Tree Spacing
+                const candidate = new THREE.Vector3(rX, 0, rZ);
                 let tooClose = false;
                 for (const pos of existingPositions) {
-                    if (candidate.distanceTo(pos) < minDistance) {
-                        tooClose = true;
-                        break;
-                    }
+                    if (candidate.distanceTo(pos) < minDistance) { tooClose = true; break; }
                 }
                 if (tooClose) continue;
 
-                // 3. Raycast
                 origin.set(rX, 100, rZ); 
                 raycaster.set(origin, down);
                 const intersects = raycaster.intersectObjects(this.groundMeshes, true);
@@ -262,42 +249,24 @@ export class World {
                     const tree = treeModel.clone(true);
                     tree.position.set(hit.x, hit.y, hit.z);
 
-                    // --- NEW: VARIETY SIZE LOGIC ---
-                    const dice = Math.random(); // 0.0 to 1.0
+                    const dice = Math.random(); 
                     let scale;
-
-                    if (dice > 0.95) {
-                        // 5% chance of a TITAN tree (Really huge)
-                        scale = 3.5 + Math.random() * 1.5; // Scale 3.5x to 5.0x
-                    } 
-                    else if (dice > 0.8) {
-                        // 15% chance of a LARGE tree
-                        scale = 2.0 + Math.random() * 1.0; // Scale 2.0x to 3.0x
-                    } 
-                    else if (dice > 0.5) {
-                         // 30% chance of SLIGHTLY LARGE tree
-                        scale = 1.2 + Math.random() * 0.6; // Scale 1.2x to 1.8x
-                    }
-                    else {
-                        // 50% chance of AVERAGE / SMALL tree
-                        scale = 0.5 + Math.random() * 0.5; // Scale 0.5x to 1.0x
-                    }
+                    if (dice > 0.95) scale = 3.5 + Math.random() * 1.5; 
+                    else if (dice > 0.8) scale = 2.0 + Math.random() * 1.0; 
+                    else if (dice > 0.5) scale = 1.2 + Math.random() * 0.6; 
+                    else scale = 0.5 + Math.random() * 0.5; 
 
                     tree.scale.set(scale, scale, scale);
                     tree.rotation.y = Math.random() * Math.PI * 2;
-
-                    // Shadows
-                    tree.traverse(c => {
-                        if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
-                    });
+                    
+                    tree.traverse(c => { if(c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
 
                     this.scene.add(tree);
-                    existingPositions.push(new THREE.Vector3(rX, 0, rZ));
+                    this.treeMeshes.push(tree); 
+                    existingPositions.push(candidate);
                     treesPlaced++;
                 }
             }
-            console.log(`Placed ${treesPlaced} trees after ${attempts} attempts.`);
         });
     }
-    */
 }

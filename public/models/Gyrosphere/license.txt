@@ -1,0 +1,11 @@
+Model Information:
+* title:	Jurassic World Gyrosphere
+* source:	https://sketchfab.com/3d-models/jurassic-world-gyrosphere-0d8922f90a664853b9891e088868d7f7
+* author:	AllThingsSaurus (https://sketchfab.com/AllThingsSaurus)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Jurassic World Gyrosphere" (https://sketchfab.com/3d-models/jurassic-world-gyrosphere-0d8922f90a664853b9891e088868d7f7) by AllThingsSaurus (https://sketchfab.com/AllThingsSaurus) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
