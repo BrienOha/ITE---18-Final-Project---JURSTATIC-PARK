@@ -7,7 +7,6 @@ export class World {
     constructor(scene, dinoData = []) {
         this.scene = scene;
         this.dinoData = dinoData; 
-        this.gui = new GUI({ title: "Lighting Studio" });
         
         // Store references
         this.sunLight = null;
@@ -16,8 +15,7 @@ export class World {
         this.treeMeshes = []; 
 
         this.setupLights();
-        this.setupEnvironment();
-        this.setupGUI();
+        this.setupEnvironment();    
     }
 
     // Settings update handler
@@ -202,28 +200,55 @@ export class World {
     }
 
     spawnTrees(count, rangeX, rangeZ) {
-        loadGLTFModel('models/Trees/tree.gltf', (treeModel) => { 
+        loadGLTFModel('models/Trees/tree.gltf', (gltfScene) => {
             const raycaster = new THREE.Raycaster();
             const down = new THREE.Vector3(0, -1, 0);
             const origin = new THREE.Vector3();
-            const existingPositions = [];
-            const minDistance = 5; 
+            const dummy = new THREE.Object3D(); 
             
-            let attempts = 0, treesPlaced = 0;
+            const meshes = [];
+            
+            // 1. Find all meshes in the tree model
+            gltfScene.traverse((child) => {
+                if (child.isMesh) {
+                    const geometry = child.geometry.clone();
+                    
+
+                    geometry.rotateX(-Math.PI / 2); 
+                    
+                    meshes.push({ geometry: geometry, material: child.material });
+                }
+            });
+
+            // 2. Create the optimized InstancedMeshes
+            const instancedMeshes = meshes.map(data => {
+                const instanced = new THREE.InstancedMesh(data.geometry, data.material, count);
+                instanced.castShadow = true;
+                instanced.receiveShadow = true;
+                this.scene.add(instanced);
+                return instanced;
+            });
+
+            this.treeMeshes = instancedMeshes; 
+
+            let treesPlaced = 0;
+            let attempts = 0;
             const maxAttempts = count * 50; 
-            const fenceRadius = 80;
+            const existingPositions = [];
+            const minDistance = 5;
 
             while (treesPlaced < count && attempts < maxAttempts) {
                 attempts++;
                 const rX = (Math.random() - 0.5) * rangeX; 
                 const rZ = (Math.random() - 0.5) * rangeZ;
+
                 
-                // Sparse inside fence
-                if (Math.sqrt(rX*rX + rZ*rZ) < fenceRadius) {
-                    if (Math.random() > 0.05) continue;
+                // 1. Fence Check (Sparse inside)
+                if (Math.sqrt(rX*rX + rZ*rZ) < 80) {
+                     if (Math.random() > 0.05) continue;
                 }
 
-                // Dino Collision
+                // 2. Dino Collision
                 let hitDino = false;
                 for (const dino of this.dinoData) {
                     const dx = rX - dino.pos.x;
@@ -232,7 +257,7 @@ export class World {
                 }
                 if (hitDino) continue; 
 
-                // Tree Spacing
+                // 3. Tree Spacing
                 const candidate = new THREE.Vector3(rX, 0, rZ);
                 let tooClose = false;
                 for (const pos of existingPositions) {
@@ -240,14 +265,19 @@ export class World {
                 }
                 if (tooClose) continue;
 
+                // --- PLACEMENT ---
                 origin.set(rX, 100, rZ); 
                 raycaster.set(origin, down);
                 const intersects = raycaster.intersectObjects(this.groundMeshes, true);
 
                 if (intersects.length > 0) {
                     const hit = intersects[0].point;
-                    const tree = treeModel.clone(true);
-                    tree.position.set(hit.x, hit.y, hit.z);
+                    
+                    // Position
+                    dummy.position.set(hit.x, hit.y, hit.z);
+
+                    // Rotation 
+                    dummy.rotation.set(0, Math.random() * Math.PI * 2, 0);
 
                     const dice = Math.random(); 
                     let scale;
@@ -255,17 +285,21 @@ export class World {
                     else if (dice > 0.8) scale = 2.0 + Math.random() * 1.0; 
                     else if (dice > 0.5) scale = 1.2 + Math.random() * 0.6; 
                     else scale = 0.5 + Math.random() * 0.5; 
+                    dummy.scale.set(scale, scale, scale);
 
-                    tree.scale.set(scale, scale, scale);
-                    tree.rotation.y = Math.random() * Math.PI * 2;
-                    
-                    tree.traverse(c => { if(c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+                    dummy.updateMatrix();
 
-                    this.scene.add(tree);
-                    this.treeMeshes.push(tree); 
+                    for (const imesh of instancedMeshes) {
+                        imesh.setMatrixAt(treesPlaced, dummy.matrix);
+                    }
+
                     existingPositions.push(candidate);
                     treesPlaced++;
                 }
+            }
+
+            for (const imesh of instancedMeshes) {
+                imesh.instanceMatrix.needsUpdate = true;
             }
         });
     }

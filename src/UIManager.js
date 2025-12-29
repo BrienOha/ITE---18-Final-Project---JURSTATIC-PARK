@@ -1,39 +1,95 @@
+import { AudioManager } from './AudioManager.js';
+
 export class UIManager {
     constructor() {
+        // DOM Elements
+        this.disclaimerScreen = document.getElementById('disclaimer-screen');
         this.titleScreen = document.getElementById('title-screen');
         this.uiContainer = document.getElementById('ui-container');
         this.settingsModal = document.getElementById('settings-modal');
+        this.audioControls = document.getElementById('audio-controls');
         
+        // Info Card
         this.infoCard = document.getElementById('info-card');
         this.nameEl = document.getElementById('dino-name');
+        this.sciEl = document.getElementById('dino-sci');
         this.heightEl = document.getElementById('dino-height');
         this.dietEl = document.getElementById('dino-diet'); 
         this.descEl = document.getElementById('dino-desc');
         this.dinoList = document.getElementById('dino-list');
         this.currentDino = null;
 
+        // Controls
         this.qualitySelect = document.getElementById('set-quality');
         this.shadowBtn = document.getElementById('toggle-shadows');
+        this.muteBtn = document.getElementById('btn-mute-music');
         
+        // Initialize Audio Manager
+        this.audio = new AudioManager();
+
         this.initButtons();
     }
 
     initButtons() {
-        // --- TITLE SCREEN BUTTONS ---
-        document.getElementById('btn-start').addEventListener('click', () => {
-            this.titleScreen.style.opacity = '0';
-            setTimeout(() => {
-                this.titleScreen.classList.add('hidden');
-                this.uiContainer.classList.remove('hidden');
-            }, 800);
-            window.dispatchEvent(new Event('startSimulation'));
-        });
+        // --- 1. DISCLAIMER (Starts Audio) ---
+        const ackBtn = document.getElementById('btn-acknowledge');
+        if (ackBtn) {
+            ackBtn.addEventListener('click', () => {
+                // Fade out disclaimer
+                this.disclaimerScreen.style.opacity = '0';
+                setTimeout(() => {
+                    this.disclaimerScreen.classList.add('hidden');
+                    
+                    // Show Title & Audio Controls
+                    this.titleScreen.classList.remove('hidden');
+                    this.audioControls.classList.remove('hidden');
+                    
+                    // Force Title opacity
+                    requestAnimationFrame(() => this.titleScreen.style.opacity = '1');
+                }, 1000);
 
-        document.getElementById('btn-settings-title').addEventListener('click', () => {
-            this.settingsModal.classList.remove('hidden');
-        });
+                // FIX: Call the correct function in AudioManager
+                this.audio.startExperience();
+            });
+        }
 
-        // --- GAME UI BUTTONS ---
+        // --- 2. AUDIO MUTE BUTTON ---
+        if (this.muteBtn) {
+            this.muteBtn.addEventListener('click', () => {
+                const isMuted = this.audio.toggleMusic();
+                if (isMuted) {
+                    this.muteBtn.textContent = "MUSIC: OFF";
+                    this.muteBtn.style.opacity = "0.5";
+                    this.muteBtn.style.textDecoration = "line-through";
+                } else {
+                    this.muteBtn.textContent = "MUSIC: ON";
+                    this.muteBtn.style.opacity = "1";
+                    this.muteBtn.style.textDecoration = "none";
+                }
+            });
+        }
+
+        // --- 3. START GAME ---
+        const startBtn = document.getElementById('btn-start');
+        if (startBtn) {
+            startBtn.addEventListener('click', () => {
+                this.titleScreen.style.opacity = '0';
+                setTimeout(() => {
+                    this.titleScreen.classList.add('hidden');
+                    this.uiContainer.classList.remove('hidden');
+                }, 800);
+                window.dispatchEvent(new Event('startSimulation'));
+            });
+        }
+
+        // --- SETTINGS LOGIC ---
+        const settingsTitleBtn = document.getElementById('btn-settings-title');
+        if(settingsTitleBtn) {
+            settingsTitleBtn.addEventListener('click', () => {
+                this.settingsModal.classList.remove('hidden');
+            });
+        }
+
         const gameSettingsBtn = document.getElementById('btn-open-settings-game');
         if(gameSettingsBtn) {
             gameSettingsBtn.addEventListener('click', () => {
@@ -41,21 +97,25 @@ export class UIManager {
             });
         }
 
-        // --- SETTINGS MODAL ---
-        document.getElementById('btn-close-settings').addEventListener('click', () => {
-            this.settingsModal.classList.add('hidden');
-            window.dispatchEvent(new CustomEvent('settingsChanged', { 
-                detail: { 
-                    quality: this.qualitySelect.value,
-                    shadows: this.shadowBtn.classList.contains('active')
-                }
-            }));
-        });
+        const closeSettingsBtn = document.getElementById('btn-close-settings');
+        if(closeSettingsBtn) {
+            closeSettingsBtn.addEventListener('click', () => {
+                this.settingsModal.classList.add('hidden');
+                window.dispatchEvent(new CustomEvent('settingsChanged', { 
+                    detail: { 
+                        quality: this.qualitySelect.value,
+                        shadows: this.shadowBtn.classList.contains('active')
+                    }
+                }));
+            });
+        }
 
-        this.shadowBtn.addEventListener('click', () => {
-            this.shadowBtn.classList.toggle('active');
-            this.shadowBtn.textContent = this.shadowBtn.classList.contains('active') ? 'ENABLED' : 'DISABLED';
-        });
+        if(this.shadowBtn) {
+            this.shadowBtn.addEventListener('click', () => {
+                this.shadowBtn.classList.toggle('active');
+                this.shadowBtn.textContent = this.shadowBtn.classList.contains('active') ? 'ENABLED' : 'DISABLED';
+            });
+        }
     }
 
     populateList(dinoData, callback) {
@@ -72,30 +132,20 @@ export class UIManager {
         if(this.currentDino === data.name) return;
         this.currentDino = data.name;
 
-        // Update Content
         this.nameEl.textContent = data.name;
+        this.sciEl.textContent = data.sciName || data.name; 
         this.heightEl.textContent = data.height + "m";
         if(this.dietEl && data.diet) this.dietEl.textContent = data.diet;
         this.descEl.textContent = data.desc;
         
-        // FIX: Remove 'hidden' first so 'display: none' is gone
         this.infoCard.classList.remove('hidden');
-        
-        // FIX: Force a "reflow" so the browser realizes it needs to animate from opacity 0 to 1
         void this.infoCard.offsetWidth; 
-        
-        // Trigger the animation class
         this.infoCard.classList.add('active-card');
     }
 
     hideInfo() {
         if(!this.currentDino) return;
         this.currentDino = null;
-        
-        // Fade out by removing the active class
         this.infoCard.classList.remove('active-card');
-        
-        // Note: We do NOT add 'hidden' back immediately, otherwise the fade-out animation cuts off.
-        // The CSS handles opacity: 0, which effectively hides it.
     }
 }

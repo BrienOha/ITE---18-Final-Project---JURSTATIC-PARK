@@ -13,18 +13,25 @@ body, html { margin: 0; padding: 0; background: var(--dark); font-family: var(--
 #webgl { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transition: opacity 1s; }
 #webgl.hidden { opacity: 0; }
 
-/* --- TITLE SCREEN --- */
+/* --- TITLE SCREEN (Updated for 3D Background) --- */
 #title-screen {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background-color: var(--dark); display: flex; justify-content: center; align-items: center; z-index: 2000;
+    /* Transparent gradient so we can see the 3D world behind it */
+    background: radial-gradient(circle at center, rgba(10, 20, 30, 0.4) 0%, rgba(0, 0, 0, 0.95) 100%);
+    display: flex; justify-content: center; align-items: center; z-index: 2000;
     transition: opacity 0.8s ease-out;
+    backdrop-filter: blur(3px); /* Subtle blur for focus on text */
 }
+
+/* Grid is now subtle overlay */
 .grid-bg {
     position: absolute; width: 100%; height: 100%;
-    background-image: linear-gradient(rgba(255, 204, 0, 0.05) 1px, transparent 1px),
-                      linear-gradient(90deg, rgba(255, 204, 0, 0.05) 1px, transparent 1px);
+    background-image: linear-gradient(rgba(255, 204, 0, 0.03) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255, 204, 0, 0.03) 1px, transparent 1px);
     background-size: 50px 50px; pointer-events: none;
 }
+
+/* ... (Keep existing Title Container, Buttons, Settings styles same as before) ... */
 .title-container { z-index: 2; text-align: center; position: relative; width: 600px; }
 .top-bar { font-family: var(--font-mono); color: #555; letter-spacing: 5px; margin-bottom: 20px; font-size: 0.8rem; border-bottom: 1px solid #333; padding-bottom: 10px; }
 h1 { font-size: 6rem; line-height: 0.9; margin: 0; color: #fff; text-transform: uppercase; font-weight: 900; letter-spacing: -2px; }
@@ -40,7 +47,7 @@ p { color: var(--primary); letter-spacing: 8px; font-weight: 700; margin-top: 10
 .brutal-btn.outline:hover { background: rgba(255, 204, 0, 0.1); box-shadow: 4px 4px 0px var(--primary); }
 .bottom-data { margin-top: 60px; display: flex; justify-content: space-between; font-family: var(--font-mono); color: #444; font-size: 0.7rem; }
 
-/* --- SETTINGS MODAL --- */
+/* ... (Settings Modal & Nav Panel Styles remain the same) ... */
 #settings-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; display: flex; justify-content: center; align-items: center; }
 .modal-backdrop { position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); }
 .brutal-box { position: relative; background: #000; border: 2px solid #333; width: 400px; padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
@@ -54,80 +61,52 @@ select { background: #111; border: 1px solid #444; color: var(--primary); paddin
 .toggle-btn.active { background: var(--primary); color: #000; border-color: var(--primary); }
 .brutal-btn.full { width: 100%; margin-top: 20px; }
 
-/* --- HUD / SIDEBAR (Fixed Layout) --- */
 #ui-container { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; }
-
 #nav-panel {
-    position: absolute; top: 0; left: 0; 
-    height: 100vh; /* Full viewport height */
-    width: 300px;
-    background: var(--panel-bg);
-    border-right: 2px solid var(--primary);
-    
-    /* FIX: box-sizing includes padding in height calc */
-    box-sizing: border-box; 
-    padding: 20px;
-    
-    pointer-events: auto;
-    display: flex; flex-direction: column;
-    
-    transform: translateX(-260px); 
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+    position: absolute; top: 0; left: 0; height: 100vh; width: 300px; background: var(--panel-bg); border-right: 2px solid var(--primary); box-sizing: border-box; padding: 20px; pointer-events: auto; display: flex; flex-direction: column; transform: translateX(-260px); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 10px 0 30px rgba(0,0,0,0.5);
 }
-
 #nav-panel:hover { transform: translateX(0); }
-#nav-panel::after {
-    content: "DATABASE //"; position: absolute; right: -40px; top: 50%;
-    transform: rotate(90deg) translateY(50%); color: var(--primary); font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 3px; white-space: nowrap; opacity: 0.8;
-}
+#nav-panel::after { content: "DATABASE //"; position: absolute; right: -40px; top: 50%; transform: rotate(90deg) translateY(50%); color: var(--primary); font-family: var(--font-mono); font-size: 0.8rem; letter-spacing: 3px; white-space: nowrap; opacity: 0.8; }
 #nav-panel:hover::after { opacity: 0; }
-
 .panel-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #333; }
 .panel-header h3 { margin: 0; color: #fff; letter-spacing: 2px; }
 .status-light { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 8px var(--primary); animation: pulse 2s infinite; }
-
-/* Flex grow makes list take available space */
 #dino-list { list-style: none; padding: 0; flex-grow: 1; overflow-y: auto; margin-bottom: 20px; }
-#dino-list li {
-    padding: 15px; border-bottom: 1px solid #222; color: #888; font-family: var(--font-mono);
-    cursor: pointer; transition: 0.2s; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between;
-}
+#dino-list li { padding: 15px; border-bottom: 1px solid #222; color: #888; font-family: var(--font-mono); cursor: pointer; transition: 0.2s; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; }
 #dino-list li:hover { background: #111; color: var(--primary); padding-left: 20px; border-left: 3px solid var(--primary); }
 #dino-list li::after { content: ">"; opacity: 0; transition: 0.2s; }
 #dino-list li:hover::after { opacity: 1; }
-
-/* Pinned to bottom correctly now because of flex-grow above */
 .panel-controls { display: flex; flex-direction: column; gap: 10px; padding-top: 10px; border-top: 1px solid #333; flex-shrink: 0; }
-.hud-btn {
-    background: #1a1a1a; border: 1px solid #444; color: #fff; padding: 15px;
-    font-family: var(--font-head); font-weight: bold; cursor: pointer; width: 100%;
-    transition: 0.2s; text-align: center;
-}
+.hud-btn { background: #1a1a1a; border: 1px solid #444; color: #fff; padding: 15px; font-family: var(--font-head); font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; text-align: center; }
 .hud-btn:hover { background: var(--primary); color: #000; border-color: var(--primary); }
 .hud-btn.small { flex: 0 0 auto; }
 
-/* --- INFO CARD (Fade Animation Fix) --- */
+/* --- INFO CARD (FLEXIBLE) --- */
 #info-card {
-    position: absolute; bottom: 50px; right: 50px; width: 450px;
-    background: rgba(10, 15, 20, 0.95); border: 1px solid var(--primary); color: #fff;
-    pointer-events: none; /* Ignore clicks when invisible */
+    position: absolute; bottom: 50px; right: 50px;
     
-    /* Smooth Transition State */
-    opacity: 0; 
-    transform: translateY(30px);
+    /* Flexibility Updates */
+    min-width: 400px;
+    max-width: 600px; /* Don't get too wide on huge screens */
+    width: auto;      /* Adapt to content */
+    
+    background: rgba(10, 15, 20, 0.95); border: 1px solid var(--primary); color: #fff;
+    pointer-events: none; opacity: 0; transform: translateY(30px);
     transition: opacity 0.5s ease-out, transform 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
 }
-
-/* New class for visibility toggling */
-#info-card.active-card {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto; /* Enable clicks when visible */
-}
+#info-card.active-card { opacity: 1; transform: translateY(0); pointer-events: auto; }
 
 .card-content { padding: 35px; position: relative; z-index: 2; }
-.card-content h1 { font-size: 2.5rem; margin: 0 0 20px 0; color: var(--primary); line-height: 1; letter-spacing: -1px; }
+
+/* Dynamic Title Sizing */
+.card-content h1 { 
+    font-size: 2.2rem; margin: 0; color: var(--primary); line-height: 1; letter-spacing: -1px;
+    word-wrap: break-word; /* Prevent overflow */
+}
+
+/* Scientific Name */
+.sci-name { margin: 5px 0 20px 0; color: #888; font-family: var(--font-mono); font-style: italic; font-weight: 400; font-size: 0.9rem; letter-spacing: 1px; }
+
 .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 25px; border-top: 1px solid #333; border-bottom: 1px solid #333; padding: 20px 0; }
 .data-item { display: flex; flex-direction: column; }
 .label { font-size: 0.75rem; color: #666; font-family: var(--font-mono); margin-bottom: 5px; }
@@ -136,10 +115,76 @@ select { background: #111; border: 1px solid #444; color: var(--primary); paddin
 .card-deco { position: absolute; top: -1px; right: -1px; width: 30px; height: 30px; background: linear-gradient(45deg, transparent 50%, var(--primary) 50%); }
 
 #instructions { position: absolute; bottom: 20px; width: 100%; text-align: center; font-family: var(--font-mono); font-size: 0.8rem; color: #666; letter-spacing: 2px; }
-
 #loading-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 5000; display: flex; justify-content: center; align-items: center; }
 .loading-content { width: 300px; }
 #loading-text { font-family: var(--font-mono); color: var(--primary); margin-bottom: 10px; font-size: 0.8rem; }
 #loading-bar-container { width: 100%; height: 4px; background: #222; }
 #loading-bar { height: 100%; background: var(--primary); width: 0%; transition: width 0.2s; }
 @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+
+#disclaimer-screen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: #000; z-index: 9999;
+    display: flex; justify-content: center; align-items: center;
+    transition: opacity 1s ease-out;
+}
+
+.warning-box {
+    width: 500px; padding: 40px; border: 2px solid #ff3333; /* Red Warning Color */
+    background: rgba(20, 0, 0, 0.95); text-align: center;
+    box-shadow: 0 0 50px rgba(255, 50, 50, 0.2);
+}
+
+.warning-icon { font-size: 3rem; margin-bottom: 20px; }
+
+.warning-box h2 {
+    color: #ff3333; margin: 0 0 20px 0; letter-spacing: 5px;
+    font-size: 1.5rem; text-transform: uppercase;
+}
+
+.warning-box p {
+    color: #ccc; font-family: var(--font-mono); font-size: 0.9rem;
+    line-height: 1.6; letter-spacing: 0; margin-bottom: 15px;
+}
+
+.highlight { color: #fff; font-weight: bold; border-bottom: 1px solid #ff3333; }
+
+/* Override button color for warning screen */
+#disclaimer-screen .brutal-btn {
+    background: #ff3333; margin-top: 30px;
+    clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+#disclaimer-screen .brutal-btn:hover {
+    box-shadow: 4px 4px 0px #fff; transform: translate(-2px, -2px);
+}
+
+#audio-controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 4000; /* Above everything */
+}
+
+#btn-mute-music {
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    padding: 10px 15px;
+    cursor: pointer;
+    width: auto;
+    transition: 0.2s;
+    text-transform: uppercase;
+}
+
+#btn-mute-music:hover {
+    background: var(--primary);
+    color: #000;
+}
+
+#btn-mute-music.muted {
+    border-color: #555;
+    color: #555;
+    text-decoration: line-through;
+}

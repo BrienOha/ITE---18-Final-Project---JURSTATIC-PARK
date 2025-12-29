@@ -5,67 +5,93 @@ import { InputController } from './src/InputController.js';
 import { UIManager } from './src/UIManager.js';
 import { setLoadingProgress, hideLoadingBar } from './loading-bar.js';
 
-let renderer, world;
+// Globals
+let renderer, scene, camera, world, dinoManager, input;
+let isGameActive = false;
 
 // 1. Initialize UI
 const uiManager = new UIManager();
 
-// 2. Listen for Start
+// 2. Initialize the 3D Scene immediately (for Title Background)
+initEnvironment();
+
+// 3. Listen for "Start" to load the rest
 window.addEventListener('startSimulation', () => {
-    init3DWorld();
+    initGameAssets();
 });
 
-async function init3DWorld() {
-    try {
-        const canvas = document.querySelector('#webgl');
-        
-        // Show loading visuals
-        canvas.classList.remove('hidden');
-        document.getElementById('loading-overlay').classList.remove('hidden');
-        setLoadingProgress(0, 'Connecting to Satellite...');
+// --- PHASE 1: ENVIRONMENT & CINEMATIC CAM ---
+function initEnvironment() {
+    const canvas = document.querySelector('#webgl');
+    canvas.classList.remove('hidden');
 
-        // Preload Assets
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x112233);
+
+    const sizes = { width: window.innerWidth, height: window.innerHeight };
+    camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000);
+    
+    // Intro Camera Position
+    camera.position.set(0, 30, 80);
+    scene.add(camera);
+
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+    renderer.setSize(sizes.width, sizes.height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+
+    window.addEventListener('resize', () => {
+        sizes.width = window.innerWidth;
+        sizes.height = window.innerHeight;
+        camera.aspect = sizes.width / sizes.height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(sizes.width, sizes.height);
+    });
+
+    // Get Dino Positions (Static) for World Generation (Tree placement)
+    const dinoDataStatic = DinosaurManager.getStaticDinoData();
+    
+    // Initialize World (Trees, Ground, Lighting)
+    world = new World(scene, dinoDataStatic);
+
+    // Start Cinematic Loop
+    const clock = new THREE.Clock();
+    const introTick = () => {
+        if (isGameActive) return; // Stop this loop when game starts
+
+        const time = clock.getElapsedTime();
+        
+        // Cinematic Pan
+        camera.position.x = Math.sin(time * 0.1) * 60;
+        camera.position.z = Math.cos(time * 0.1) * 60;
+        camera.position.y = 30 + Math.sin(time * 0.2) * 5;
+        camera.lookAt(0, 0, 0);
+
+        renderer.render(scene, camera);
+        requestAnimationFrame(introTick);
+    };
+    introTick();
+}
+
+// --- PHASE 2: LOAD DINOSAURS & GAMEPLAY ---
+async function initGameAssets() {
+    try {
+        document.getElementById('loading-overlay').classList.remove('hidden');
+        setLoadingProgress(0, 'Initializing Biological Assets...');
+
+        // Load Dinosaurs
         const assets = await DinosaurManager.preloadAllAssets((percent, text) => {
             setLoadingProgress(percent, text);
         });
 
-        setLoadingProgress(100, 'System Ready');
+        setLoadingProgress(100, 'Simulation Active');
 
-        // Setup Scene
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x112233);
-
-        const sizes = { width: window.innerWidth, height: window.innerHeight };
-        const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000);
-        camera.position.set(0, 5, 10);
-        
-        // FIX: Add camera to scene directly
-        scene.add(camera);
-
-        // Setup Renderer
-        renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-        renderer.setSize(sizes.width, sizes.height);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.0;
-
-        // Resize Handler
-        window.addEventListener('resize', () => {
-            sizes.width = window.innerWidth;
-            sizes.height = window.innerHeight;
-            camera.aspect = sizes.width / sizes.height;
-            camera.updateProjectionMatrix();
-            renderer.setSize(sizes.width, sizes.height);
-        });
-
-        // Process Assets
-        const dinoDataList = [];
+        // Place Dinosaurs
         const loadedMeshes = new Array(assets.length).fill(null);
-
         assets.forEach((asset, i) => {
-            dinoDataList.push(asset.dino);
             if (asset.gltf) {
                 const gltfScene = asset.gltf;
                 const scale = asset.dino.scale || 1;
@@ -84,41 +110,45 @@ async function init3DWorld() {
         });
 
         // Initialize Managers
-        world = new World(scene, dinoDataList);
-        const dinoManager = new DinosaurManager(scene, camera, uiManager, loadedMeshes);
+        dinoManager = new DinosaurManager(scene, camera, uiManager, loadedMeshes);
         
-        // Setup Inputs - Attached to Body
-        const input = new InputController(camera, document.body);
-        
-        // FIX: Removed the failing scene.add(input.controls.getObject()) line.
-        // We do not need to add controls to scene, we manipulate camera directly.
-
-        // Populate UI
+        // Populate UI List
         uiManager.populateList(dinoManager.data, (index) => {
             dinoManager.travelTo(index);
         });
 
-        // Start Loop
-        const clock = new THREE.Clock();
-        const tick = () => {
-            const delta = clock.getDelta();
+        // Setup Controls
+        input = new InputController(camera, document.body);
+        
+        // Reset Camera for Gameplay
+        camera.position.set(0, 5, 10);
+        camera.lookAt(0, 5, 0);
+
+        // Switch Loops
+        isGameActive = true;
+        hideLoadingBar();
+        
+        // Start Game Loop
+        const gameClock = new THREE.Clock();
+        const gameTick = () => {
+            const delta = gameClock.getDelta();
+            
             input.update(delta);
             dinoManager.checkIntersection();
+            
             renderer.render(scene, camera);
-            requestAnimationFrame(tick);
+            requestAnimationFrame(gameTick);
         };
-        
-        // Hide Loader
-        hideLoadingBar();
-        tick();
+        gameTick();
 
     } catch (error) {
-        console.error("CRITICAL ERROR IN INIT:", error);
-        setLoadingProgress(100, "SYSTEM FAILURE (Check Console)");
+        console.error("CRITICAL ERROR IN LOADING:", error);
+        setLoadingProgress(100, "SYSTEM FAILURE");
+        setTimeout(hideLoadingBar, 2000); 
     }
 }
 
-// Global Settings Listener
+// Settings Listener
 window.addEventListener('settingsChanged', (e) => {
     if (!renderer || !world) return;
     const { quality, shadows } = e.detail;

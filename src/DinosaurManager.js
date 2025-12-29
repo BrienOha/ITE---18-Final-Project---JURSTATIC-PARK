@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { loadGLTFModel } from './GLTFUtils.js';
-import { normalWorld } from 'three/tsl';
 
 export class DinosaurManager {
     constructor(scene, camera, uiManager, existingMeshes = []) {
@@ -12,7 +11,9 @@ export class DinosaurManager {
         
         this.dinoMeshes = existingMeshes; 
         this.hitboxes = []; 
-        this.data = this.getDinoData();
+        
+        // Use static data for initialization
+        this.data = DinosaurManager.getStaticDinoData();
 
         if (this.scene) {
             this.initHumanRef();
@@ -20,21 +21,121 @@ export class DinosaurManager {
         }
     }
 
-    getDinoData() {
+    // UPDATED: Changed to Static so Main.js can access it early
+    static getStaticDinoData() {
         return [
-            // rot: Y-axis rotation in Radians (Math.PI = 180 deg)
-            { name: "T-Rex", height: 5, length: 12, desc: "The King of Dinosaurs.", pos: {x: 0, y: 0, z: -30}, rot: Math.PI / 6, scale: 0.02, model: "/models/T-Rex/trex.gltf"},
-            { name: "Velociraptor", height: 1.8, length: 3, desc: "Highly intelligent pack hunters.", pos: {x: 8, y: 1.5, z: -15}, rot: -Math.PI / 4, scale: 0.05, model: "/models/Velociraptor/velociraptor.gltf", textureConfig: {map: "Material_36_baseColor.jpeg"}},
-            { name: "Triceratops", height: 3, length: 9, desc: "Herbivore with three horns.", pos: {x:-25, y : 1, z : -20}, rot: Math.PI / 2, scale : 2, model : "/models/Triceratops/triceratops.gltf" },
-            { name: "Spinosaurus", height :7 , length :15, desc :"Largest carnivorous dinosaur.", pos :{ x :30 , y :0 , z :-40 }, rot: -Math.PI / 6, scale :0.12, model:"/models/Spinosaurus/spinosaurus.gltf" },
-            { name: "Carnotaurus", height :3.5 , length :8, desc :"Fast predator with bull-like horns.", pos:{ x :-30 , y :2 , z :-10 }, rot: Math.PI, scale :0.8, model:"/models/Carnotaurus/carnotaurus.gltf" },
-            { name: "Brachiosaurus", height: 15, length: 26, desc: "Gentle giant.", pos: {x: 0, z: -60}, rot: 0, scale: 2.5, model: "/models/Brachiosaurus/brachiosaurus.gltf" },
-            { name: "Pterodactyl", height: 1, length: 2, desc: "Flying reptile.", pos: {x: 15, z: -5, y: 15}, rot: Math.PI / 3, scale: 0.0005, model: "/models/Pterodactyl/pterodactyl.gltf" },
-            { name: "Mosasaurus", height: 4, length: 18, desc: "Apex predator of the deep seas.", pos: {x: -40, z: 20}, rot: -Math.PI / 2, scale: 1.5, model: "/models/Mosasaurus/mosasaurus.gltf" },
-            { name: "Giganotosaurus", height: 6.5, length: 13, desc: "Larger than T-Rex.", pos: {x: 25, y:0, z: 0}, rot: Math.PI / 1.5, scale: 1.5,model: "/models/Giganotosaurus/giganotosaurus.gltf" },
-            { name: "Allosaurus", height: 4, length: 10, desc: "The lion of the Jurassic period.", pos: {x: -15, y: 1,z: 15}, rot: Math.PI / 4, scale: 1.2, model: "/models/Allosaurus/allosaurus.gltf" }
-        
+            { 
+                name: "T-Rex", sciName: "Tyrannosaurus rex",
+                height: 5, length: 12, diet: "Carnivore",
+                desc: "The King of Dinosaurs. Extremely powerful bite force.", 
+                pos: {x: 0, y: 0, z: -30}, rot: Math.PI / 6, scale: 0.02, 
+                model: "/models/T-Rex/trex.gltf"
+            },
+            { 
+                name: "Velociraptor", sciName: "Velociraptor mongoliensis",
+                height: 1.8, length: 3, diet: "Carnivore",
+                desc: "Highly intelligent pack hunters. Watch the tall grass.", 
+                pos: {x: 8, y: 1.5, z: -15}, rot: -Math.PI / 4, scale: 0.05, 
+                model: "/models/Velociraptor/velociraptor.gltf", 
+                textureConfig: {map: "Material_36_baseColor.jpeg"}
+            },
+            { 
+                name: "Triceratops", sciName: "Triceratops horridus",
+                height: 3, length: 9, diet: "Herbivore",
+                desc: "Herbivore with three horns and a large frill.", 
+                pos: {x:-25, y : 1, z : -20}, rot: Math.PI / 2, scale : 2, 
+                model : "/models/Triceratops/triceratops.gltf" 
+            },
+            { 
+                name: "Spinosaurus", sciName: "Spinosaurus aegyptiacus",
+                height :7 , length :15, diet: "Piscivore",
+                desc :"Largest carnivorous dinosaur, semi-aquatic with a sail.", 
+                pos :{ x :30 , y :0 , z :-40 }, rot: -Math.PI / 6, scale :0.12, 
+                model:"/models/Spinosaurus/spinosaurus.gltf" 
+            },
+            { 
+                name: "Carnotaurus", sciName: "Carnotaurus sastrei",
+                height :3.5 , length :8, diet: "Carnivore",
+                desc :"Fast predator with bull-like horns above eyes.", 
+                pos:{ x :-30 , y :1 , z :-10 }, rot: Math.PI, scale :0.8, 
+                model:"/models/Carnotaurus/carnotaurus.gltf" 
+            },
+            { 
+                name: "Brachiosaurus", sciName: "Brachiosaurus altithorax",
+                height: 15, length: 26, diet: "Herbivore",
+                desc: "Gentle giant. One of the tallest dinosaurs.", 
+                pos: {x: 0, z: -60}, rot: 0, scale: 1.8, 
+                model: "/models/Brachiosaurus/brachiosaurus.gltf" 
+            },
+            { 
+                name: "Pterodactyl", sciName: "Pterodactylus antiquus",
+                height: 1, length: 2, diet: "Carnivore",
+                desc: "Flying reptile. Not technically a dinosaur.", 
+                pos: {x: 15, z: -5, y: 30}, rot: Math.PI / 3, scale: 0.0005, 
+                model: "/models/Pterodactyl/pterodactyl.gltf" 
+            },
+            { 
+                name: "Giganotosaurus", sciName: "Giganotosaurus carolinii",
+                height: 6.5, length: 13, diet: "Carnivore",
+                desc: "Larger than T-Rex.", 
+                pos: {x: 25, y:0, z: 0}, rot: Math.PI / 1.5, scale: 1.5,
+                model: "/models/Giganotosaurus/giganotosaurus.gltf" 
+            },
+            { 
+                name: "Allosaurus", sciName: "Allosaurus fragilis",
+                height: 4, length: 10, diet: "Carnivore",
+                desc: "The lion of the Jurassic period.", 
+                pos: {x: -15, y: 1,z: 15}, rot: Math.PI / 4, scale: 1.2, 
+                model: "/models/Allosaurus/allosaurus.gltf" 
+            },
+            { 
+                name: "Argentinosaurus", sciName: "Argentinosaurus huinculensis",
+                height: 21, length: 35, diet: "Herbivore",
+                desc: "One of the largest land animals to ever exist.", 
+                pos: {x: -40, y: 0, z: 30}, rot: Math.PI / 4, scale: 800, 
+                model: "/models/Argentinosaurus/argentinosaurus.gltf" 
+            },
+            { 
+                name: "Ankylosaurus", sciName: "Ankylosaurus magniventris",
+                height: 2.5, length: 8, diet: "Herbivore",
+                desc: "Living tank with a heavy tail club for defense.", 
+                pos: {x: -10, y: 0, z: 45}, rot: Math.PI, scale: 0.1, 
+                model: "/models/Ankylosaurus/ankylosaurus.gltf" 
+            },
+            { 
+                name: "Parasaurolophus", sciName: "Parasaurolophus walkeri",
+                height: 4, length: 10, diet: "Herbivore",
+                desc: "Known for its large cranial crest used for communication.", 
+                pos: {x: 45, y: 0, z: 20}, rot: Math.PI / 1.2, scale: 0.1, 
+                model: "/models/Parasaurolophus/parasaurolophus.gltf" 
+            },
+            { 
+                name: "Albertosaurus", sciName: "Albertosaurus sarcophagus",
+                height: 3.2, length: 9, diet: "Carnivore",
+                desc: "A smaller, faster relative of the T-Rex.", 
+                pos: {x: -50, y: 0, z: 0}, rot: Math.PI / 3, scale: 0.1, 
+                model: "/models/Albertosaurus/albertosaurus.gltf" 
+            },
+            { 
+                name: "Carcharodontosaurus", sciName: "Carcharodontosaurus saharicus",
+                height: 6, length: 13, diet: "Carnivore",
+                desc: "The 'Shark-Toothed Lizard'. Massive land predator.", 
+                pos: {x: 10, y: 0, z: 60}, rot: -Math.PI / 1.5, scale: 0.1, 
+                model: "/models/Carcharodontosaurus/carcharodontosaurus.gltf" 
+            },
+            { 
+                name: "Stegosaurus", sciName: "Stegosaurus stenops",
+                height: 4, length: 9, diet: "Herbivore",
+                desc: "A large armored dinosaur known for the kite-shaped plates on its back and spikes on its tail.", 
+                pos: {x: 60, y: 0, z: 10}, rot: Math.PI / 1.5, scale: 0.12, 
+                model: "/models/Stegosaurus/stegosaurus.gltf" 
+            }
         ];
+    }
+
+    // Keep instance method for backwards compatibility, but it calls static
+    getDinoData() {
+        return DinosaurManager.getStaticDinoData();
     }
 
     createHitboxes() {
@@ -42,7 +143,6 @@ export class DinosaurManager {
         this.data.forEach((dino, index) => {
             const geometry = new THREE.BoxGeometry(dino.length / 2, dino.height, dino.length);
             const hitbox = new THREE.Mesh(geometry, boxMat);
-            // Apply rotation to hitbox too so it matches the dino
             hitbox.rotation.y = dino.rot || 0; 
             hitbox.position.set(dino.pos.x, (dino.pos.y || 0) + dino.height/2, dino.pos.z);
             hitbox.userData = { info: dino, originalIndex: index };
@@ -67,12 +167,13 @@ export class DinosaurManager {
 
     travelTo(index) {
         const targetDino = this.dinoMeshes[index];
-        if(!targetDino) return;
+        if(!targetDino) {
+            console.warn(`Cannot travel to dino index ${index}: Mesh not loaded.`);
+            return;
+        }
 
-        // Calculate offset based on dino rotation to face its "front" or side
         const rot = this.data[index].rot || 0;
         const offsetDist = 18;
-        // Position camera in front/side of dino
         const offsetX = Math.sin(rot) * offsetDist;
         const offsetZ = Math.cos(rot) * offsetDist;
 
@@ -87,8 +188,8 @@ export class DinosaurManager {
     }
 
     static async preloadAllAssets(onProgress) {
-        const dummy = new DinosaurManager(null, null, null);
-        const dinoData = dummy.getDinoData();
+        // Use static data
+        const dinoData = DinosaurManager.getStaticDinoData();
         const total = dinoData.length;
         let loaded = 0;
         const results = [];
@@ -101,7 +202,6 @@ export class DinosaurManager {
             try {
                 gltf = await new Promise((resolve, reject) => loadGLTFModel(dino.model, resolve, reject));
                 
-                // Apply rotation immediately so the visual mesh is correct
                 if (dino.rot) gltf.rotation.y = dino.rot;
 
                 if (dino.textureConfig) {
@@ -117,7 +217,9 @@ export class DinosaurManager {
                         }
                     });
                 }
-            } catch (e) { console.warn(`Failed ${dino.name}`, e); }
+            } catch (e) { 
+                console.warn(`Failed to load ${dino.name}`, e); 
+            }
             
             loaded++;
             if (onProgress) onProgress(Math.round((loaded / total) * 100), text);
@@ -138,20 +240,18 @@ export class DinosaurManager {
     }
 
     initHumanRef() {
-        // REPLACED CAPSULE WITH HUMAN GLTF
         loadGLTFModel('/models/Human/human.gltf', (model) => {
-            model.position.set(2, 0, 2); // On ground
-            model.scale.set(2, 2, 2); // Ensure it's 1.8m tall roughly
+            model.position.set(2, 0, 2); 
+            model.scale.set(2, 2, 2); 
             
-            // Create a hitbox for the human so the UI shows info
             const geometry = new THREE.BoxGeometry(1, 2, 1);
             const mat = new THREE.MeshBasicMaterial({ visible: false });
             const hitbox = new THREE.Mesh(geometry, mat);
             hitbox.position.set(2, 1, 2);
             
-            // Data for UI
             const humanData = {
                 name: "HUMAN",
+                sciName: "Homo sapiens",
                 height: 1.8,
                 desc: "Standard reference scale. 6ft tall.",
                 diet: "Omnivore"
@@ -160,9 +260,8 @@ export class DinosaurManager {
             
             this.scene.add(model);
             this.scene.add(hitbox);
-            this.hitboxes.push(hitbox); // Enable Raycasting
+            this.hitboxes.push(hitbox); 
             
-            // Shadows
             model.traverse(c => { if(c.isMesh) { c.castShadow = true; c.receiveShadow = true; }});
         }, (err) => console.warn("Human model missing", err));
     }
